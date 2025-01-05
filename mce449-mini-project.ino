@@ -64,14 +64,6 @@ void loop() {
     int potWaveformValue = analogRead(potWaveformPin);
     int selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
 
-    // // Debugging information
-    // Serial.print("Curr time: ");
-    // Serial.println(currentTime);
-    // Serial.print("Amplitude: ");
-    // Serial.println(updatedAmplitude);
-    // Serial.print("Frequency: ");
-    // Serial.println(updatedFrequency);
-
     float position;
 
     switch (selectedWaveform) {
@@ -109,23 +101,14 @@ void moveToPosition(float position, float amplitude, float currentPosition) {
   bool isTurningClockwise = nextPosition > currentPosition;
   digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
 
-  int stepDelay = max(150, round(interval * 1000 / (2 * abs(stepsToMove))) - 1);
+  Serial.print("Steps to move: ");
+  Serial.print(stepsToMove);
 
-  // // Debugging information
-  // Serial.print("Next Position: ");
-  // Serial.println(nextPosition);
-  // Serial.print("Current Position: ");
-  // Serial.println(currentPosition);
-  // Serial.print("MM to Move: ");
-  // Serial.println(abs(mmToMove));
-  // Serial.print("MM per Step: ");
-  // Serial.println(abs(mmPerStep));
-  // Serial.print("Steps to Move: ");
-  // Serial.println(abs(stepsToMove));
-  // Serial.print("Direction: ");
-  // Serial.println(isTurningClockwise ? "Clockwise" : "Counterclockwise");
-  // Serial.print("Step delay: ");
-  // Serial.println(stepDelay);
+  // Determine the step delay
+  int stepDelay = max(150, round(interval * 1000 / (2 * abs(stepsToMove))));
+
+  Serial.print("   Step delay: ");
+  Serial.println(stepDelay);
 
   // Move only if steps are needed
   if (stepsToMove != 0) {
