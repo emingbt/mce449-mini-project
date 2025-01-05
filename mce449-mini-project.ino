@@ -55,9 +55,9 @@ void loop() {
 
     getPotValues();
 
-    float position = getPosition(selectedWaveform, frequency, time);
+    float position = getPosition(amplitude, frequency, selectedWaveform, time);
 
-    moveToPosition(position, amplitude, previousPosition);
+    moveToPosition(position, previousPosition);
 
     // Advance time
     time += interval / 1000.0;
@@ -81,7 +81,7 @@ void getPotValues() {
   selectedWaveform = 3;
 }
 
-float getPosition(int selectedWaveform, float frequency, float time) {
+float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
   float position;
 
   switch (selectedWaveform) {
@@ -101,12 +101,12 @@ float getPosition(int selectedWaveform, float frequency, float time) {
       position = 0;
   }
 
-  return position;
+  return position * amplitude;
 }
 
-void moveToPosition(float position, float amplitude, float currentPosition) {
+void moveToPosition(float position, float currentPosition) {
   float mmPerStep = 0.04;
-  float nextPosition = position * amplitude;
+  float nextPosition = position;
   float mmToMove = nextPosition - currentPosition;
   int stepsToMove = round(mmToMove / mmPerStep);
 
