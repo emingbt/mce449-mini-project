@@ -7,10 +7,17 @@ const int ms1Pin = 10;
 const int ms2Pin = 9;
 const int ms3Pin = 8;
 
+// End switch pin
+const int switchPin = 4;
+
 // Potantiometer pins
 const int potFrequencyPin = A0;
 const int potAmplitudePin = A1;
 const int potWaveformPin = A2;
+
+// Button Pins
+const int button1Pin = 5;
+const int button2Pin = 6;
 
 // Time and motion variables
 unsigned long previousTime = 0;  // Previous time (ms)
@@ -26,7 +33,7 @@ float time = 0;
 float previousPosition = 0;
 
 void setup() {
-  // // Set pins as outputs
+  // Set pins as outputs
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(ms1Pin, OUTPUT);
@@ -49,19 +56,48 @@ void setup() {
 void loop() {
   unsigned long currentTime = millis();  // Get the current time
 
+  // Calibrate the system if calibrate button pressed
+  if (digitalWrite(button2Pin) == LOW) {
+    calibrate();
+  }
+
   // Time control for motion
   if (currentTime - previousTime >= interval) {
     previousTime = currentTime;  // Update the time
 
     getPotValues();
 
-    float position = getPosition(selectedWaveform, frequency, time);
+    float position = getPosition(amplitude, frequency, selectedWaveform, time);
 
-    moveToPosition(position, amplitude, previousPosition);
+    moveToPosition(position, previousPosition);
 
     // Advance time
     time += interval / 1000.0;
   }
+}
+
+void calibrate() {
+  // Move to the edge until the needle activates the end switch
+  while (digitalRead(switchPin) == HIGH) {
+    digitalWrite(dirPin, LOW);
+
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(1000);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(1000);
+  }
+
+  // Move to the center
+  digitalWrite(dirPin, HIGH);
+
+  for (int i = 0; i < 4950; i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(300);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(300);
+  }
+
+  delay(500);
 }
 
 void getPotValues() {
@@ -81,7 +117,7 @@ void getPotValues() {
   selectedWaveform = 3;
 }
 
-float getPosition(int selectedWaveform, float frequency, float time) {
+float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
   float position;
 
   switch (selectedWaveform) {
@@ -101,12 +137,12 @@ float getPosition(int selectedWaveform, float frequency, float time) {
       position = 0;
   }
 
-  return position;
+  return position * amplitude;
 }
 
-void moveToPosition(float position, float amplitude, float currentPosition) {
+void moveToPosition(float position, float currentPosition) {
   float mmPerStep = 0.04;
-  float nextPosition = position * amplitude;
+  float nextPosition = position;
   float mmToMove = nextPosition - currentPosition;
   int stepsToMove = round(mmToMove / mmPerStep);
 
