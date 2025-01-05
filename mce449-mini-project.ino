@@ -17,8 +17,9 @@ unsigned long previousTime = 0;  // Previous time (ms)
 unsigned long interval = 100;    // Interval between steps (ms)
 
 // Sine function parameters
-float amplitude = 50;   // Maximum amplitude (mm)
-float frequency = 0.1;  // Frequency (Hz)
+float amplitude = 50;      // Maximum amplitude (mm)
+float frequency = 0.1;     // Frequency (Hz)
+int selectedWaveform = 0;  // Waveform 0:Sine, 1:Triangle, 2:Square, 3:Sawtooth
 
 float time = 0;
 
@@ -52,36 +53,7 @@ void loop() {
   if (currentTime - previousTime >= interval) {
     previousTime = currentTime;  // Update the time
 
-    // // For future potantiometer connections;
-    int potAmplitudeValue = analogRead(potAmplitudePin);
-    int updatedAmplitude = map(potAmplitudeValue, 0, 1023, 20, 100);
-
-    float potFrequencyValue = analogRead(potFrequencyPin);
-    float maxFrequency = 20.0 / amplitude;
-    float updatedFrequency = (float)potFrequencyValue / 1023 * (20.0 / updatedAmplitude);
-    updatedFrequency = round(updatedFrequency / 0.02) * 0.02;
-
-    int potWaveformValue = analogRead(potWaveformPin);
-    int selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
-
-    float position;
-
-    switch (selectedWaveform) {
-      case 0:
-        position = sin(2 * PI * frequency * time);
-        break;
-      case 1:
-        position = 2 * abs(fmod(time * frequency, 1.0) * 2 - 1) - 1;
-        break;
-      case 2:
-        position = (sin(2 * PI * frequency * time) >= 0) ? 1.0 : -1.0;
-        break;
-      case 3:
-        position = 2 * fmod(time * frequency, 1.0) - 1;
-        break;
-      default:
-        position = 0;
-    }
+    getPotValues();
 
     moveToPosition(position, amplitude, previousPosition);
 
@@ -90,6 +62,22 @@ void loop() {
   }
 }
 
+void getPotValues() {
+  int potAmplitudeValue = analogRead(potAmplitudePin);
+  amplitude = map(potAmplitudeValue, 0, 1023, 20, 100);
+
+  float potFrequencyValue = analogRead(potFrequencyPin);
+  float maxFrequency = 20.0 / amplitude;
+  float frequency = (float)potFrequencyValue / 1023 * (20.0 / amplitude);
+  frequency = round(frequency / 0.02) * 0.02;
+
+  int potWaveformValue = analogRead(potWaveformPin);
+  selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
+
+  amplitude = 50;
+  frequency = 0.1;
+  selectedWaveform = 3;
+}
 
 void moveToPosition(float position, float amplitude, float currentPosition) {
   float mmPerStep = 0.04;
