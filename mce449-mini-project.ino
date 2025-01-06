@@ -154,7 +154,7 @@ void moveToPosition(float position, float currentPosition) {
   Serial.print(stepsToMove);
 
   // Determine the step delay
-  int stepDelay = max(150, round(interval * 1000 / (2 * abs(stepsToMove))));
+  int stepDelay = max(200, round(interval * 1000 / (2 * abs(stepsToMove))));
 
   Serial.print("   Step delay: ");
   Serial.println(stepDelay);
