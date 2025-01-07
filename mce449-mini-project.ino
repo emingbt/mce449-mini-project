@@ -21,14 +21,13 @@ const int potFrequencyPin = A1;
 const int potWaveformPin = A2;
 
 // Button Pins
-const int button1Pin = 5;
-const int button2Pin = 6;
+const int calibrateButtonPin = 6;
 
 // Time and motion variables
 unsigned long previousTime = 0;  // Previous time (ms)
 unsigned long interval = 100;    // Interval between steps (ms)
 
-// Sine function parameters
+// Function parameters
 float amplitude = 50;      // Maximum amplitude (mm)
 float frequency = 0.1;     // Frequency (Hz)
 int selectedWaveform = 0;  // Waveform 0:Sine, 1:Triangle, 2:Square, 3:Sawtooth
@@ -56,6 +55,9 @@ void setup() {
 
   pinMode(switch1Pin, INPUT_PULLUP);
   pinMode(switch2Pin, INPUT_PULLUP);
+
+  pinMode(calibrateButtonPin, INPUT_PULLUP);
+
   Serial.begin(9600);
 
   lcd.init();
@@ -80,9 +82,11 @@ void setup() {
 void loop() {
   unsigned long currentTime = millis();  // Get the current time
 
-  // Calibrate the system if calibrate button pressed
-  if (digitalWrite(button2Pin) == LOW) {
+  // Calibrate the system, if the calibrate button is pressed
+  if (digitalRead(calibrateButtonPin) == LOW) {
+    Serial.println("Button Pressed");
     calibrate();
+    time = 0;
   }
 
   // Time control for motion
