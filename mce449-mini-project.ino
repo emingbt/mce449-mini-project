@@ -1,5 +1,7 @@
+#include <EEPROM.h>
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+
 // Stepper motor pins
 const int stepPin = 2;
 const int dirPin = 3;
@@ -10,7 +12,8 @@ const int ms2Pin = 9;
 const int ms3Pin = 8;
 
 // End switch pin
-const int switchPin = 4;
+const int switch1Pin = 4;
+const int switch2Pin = 5;
 
 // Potantiometer pins
 const int potAmplitudePin = A0;
@@ -34,7 +37,10 @@ float time = 0;
 
 float previousPosition = 0;
 
+int totalSteps = 0;
+
 LiquidCrystal_I2C lcd(0x27, 16, 2);
+
 void setup() {
   // Set pins as outputs
   pinMode(stepPin, OUTPUT);
@@ -48,16 +54,27 @@ void setup() {
   pinMode(potAmplitudePin, INPUT);
   pinMode(potWaveformPin, INPUT);
 
+  pinMode(switch1Pin, INPUT_PULLUP);
+  pinMode(switch2Pin, INPUT_PULLUP);
+  Serial.begin(9600);
+
   lcd.init();
   lcd.backlight();
 
   writeToLCD(amplitude, frequency, selectedWaveform);
+
   // Set MS1, MS2, MS3 pins
   digitalWrite(ms1Pin, HIGH);
   digitalWrite(ms2Pin, LOW);
   digitalWrite(ms3Pin, LOW);
 
-  Serial.begin(9600);
+  EEPROM.get(0, totalSteps);
+
+  if (totalSteps <= 0) {
+    initialCalibrate();
+  } else {
+    calibrate();
+  }
 }
 
 void loop() {
@@ -83,28 +100,68 @@ void loop() {
   }
 }
 
-void calibrate() {
-  // Move to the edge until the needle activates the end switch
-  while (digitalRead(switchPin) == HIGH) {
+void initialCalibrate() {
+  // Move to the upper edge until the needle activates the limit switch
+  while (digitalRead(switch1Pin) == HIGH) {
     digitalWrite(dirPin, LOW);
 
     digitalWrite(stepPin, HIGH);
-    delayMicroseconds(1000);
+    delayMicroseconds(1500);
     digitalWrite(stepPin, LOW);
-    delayMicroseconds(1000);
-  }
-
-  // Move to the center
-  digitalWrite(dirPin, HIGH);
-
-  for (int i = 0; i < 4950; i++) {
-    digitalWrite(stepPin, HIGH);
-    delayMicroseconds(300);
-    digitalWrite(stepPin, LOW);
-    delayMicroseconds(300);
+    delayMicroseconds(1500);
   }
 
   delay(500);
+
+  // Move to the bottom edge and count the steps until the needle activates the limit switch
+  while (digitalRead(switch2Pin) == HIGH) {
+    digitalWrite(dirPin, HIGH);
+
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(1500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(1500);
+
+    totalSteps++;
+  }
+
+  delay(1000);
+
+  //Store the total counted steps to the eeprom and move to the center
+  EEPROM.put(0, totalSteps);
+
+  digitalWrite(dirPin, LOW);
+
+  for (int i = 0; i < (totalSteps / 2); i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(600);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(600);
+  }
+
+  delay(1000);
+}
+
+void calibrate() { // With the known total steps, move to bottom edge first and move to the center
+  while (digitalRead(switch2Pin) == HIGH) {
+    digitalWrite(dirPin, HIGH);
+
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(1500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(1500);
+  }
+
+  digitalWrite(dirPin, LOW);
+
+  for (int i = 0; i < (totalSteps / 2); i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(600);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(600);
+  }
+
+  delay(1000);
 }
 
 void getPotValues() {
