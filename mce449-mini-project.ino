@@ -1,3 +1,7 @@
+#include <EEPROM.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
 // Stepper motor pins
 const int stepPin = 2;
 const int dirPin = 3;
@@ -8,22 +12,24 @@ const int ms2Pin = 9;
 const int ms3Pin = 8;
 
 // End switch pin
-const int switchPin = 4;
+const int switch1Pin = 4;
+const int switch2Pin = 5;
 
 // Potantiometer pins
-const int potFrequencyPin = A0;
-const int potAmplitudePin = A1;
+const int potAmplitudePin = A0;
+const int potFrequencyPin = A1;
 const int potWaveformPin = A2;
 
 // Button Pins
-const int button1Pin = 5;
-const int button2Pin = 6;
+const int calibrateButtonPin = 6;
 
 // Time and motion variables
 unsigned long previousTime = 0;  // Previous time (ms)
 unsigned long interval = 100;    // Interval between steps (ms)
+unsigned long previousLcdTime = 0;  // Previous time (ms)
+unsigned long lcdInterval = 1000;    // Interval between steps (ms)
 
-// Sine function parameters
+// Function parameters
 float amplitude = 50;      // Maximum amplitude (mm)
 float frequency = 0.1;     // Frequency (Hz)
 int selectedWaveform = 0;  // Waveform 0:Sine, 1:Triangle, 2:Square, 3:Sawtooth
@@ -31,6 +37,10 @@ int selectedWaveform = 0;  // Waveform 0:Sine, 1:Triangle, 2:Square, 3:Sawtooth
 float time = 0;
 
 float previousPosition = 0;
+
+int totalSteps = 0;
+
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() {
   // Set pins as outputs
@@ -45,20 +55,48 @@ void setup() {
   pinMode(potAmplitudePin, INPUT);
   pinMode(potWaveformPin, INPUT);
 
+  pinMode(switch1Pin, INPUT_PULLUP);
+  pinMode(switch2Pin, INPUT_PULLUP);
+
+  pinMode(calibrateButtonPin, INPUT_PULLUP);
+
+  // Start serial connection
+  Serial.begin(9600);
+
+  // Initialize LCD
+  lcd.init();
+  lcd.backlight();
+  writeToLCD(amplitude, frequency, selectedWaveform);
+
   // Set MS1, MS2, MS3 pins
   digitalWrite(ms1Pin, HIGH);
   digitalWrite(ms2Pin, LOW);
   digitalWrite(ms3Pin, LOW);
 
-  Serial.begin(9600);
+  // Read the total steps from EEPROM and calibrate the system according to it
+  EEPROM.get(0, totalSteps);
+
+  if (totalSteps <= 0) {
+    initialCalibrate();
+  } else {
+    calibrate();
+  }
 }
 
 void loop() {
   unsigned long currentTime = millis();  // Get the current time
 
-  // Calibrate the system if calibrate button pressed
-  if (digitalWrite(button2Pin) == LOW) {
+  // Calibrate the system, if the calibrate button is pressed
+  if (digitalRead(calibrateButtonPin) == LOW) {
+    Serial.println("Button Pressed");
     calibrate();
+    time = 0;
+  }
+
+  // Time control for LCD
+  if (currentTime - previousLcdTime >= lcdInterval) {
+    previousLcdTime = currentTime;  // Update the LCD timer
+    writeToLCD(amplitude, frequency, selectedWaveform);  // Update the LCD
   }
 
   // Time control for motion
@@ -76,28 +114,68 @@ void loop() {
   }
 }
 
-void calibrate() {
-  // Move to the edge until the needle activates the end switch
-  while (digitalRead(switchPin) == HIGH) {
+void initialCalibrate() {
+  // Move to the upper edge until the needle activates the limit switch
+  while (digitalRead(switch1Pin) == HIGH) {
     digitalWrite(dirPin, LOW);
 
     digitalWrite(stepPin, HIGH);
-    delayMicroseconds(1000);
+    delayMicroseconds(1500);
     digitalWrite(stepPin, LOW);
-    delayMicroseconds(1000);
-  }
-
-  // Move to the center
-  digitalWrite(dirPin, HIGH);
-
-  for (int i = 0; i < 4950; i++) {
-    digitalWrite(stepPin, HIGH);
-    delayMicroseconds(300);
-    digitalWrite(stepPin, LOW);
-    delayMicroseconds(300);
+    delayMicroseconds(1500);
   }
 
   delay(500);
+
+  // Move to the bottom edge and count the steps until the needle activates the limit switch
+  while (digitalRead(switch2Pin) == HIGH) {
+    digitalWrite(dirPin, HIGH);
+
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(1500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(1500);
+
+    totalSteps++;
+  }
+
+  delay(1000);
+
+  //Store the total counted steps to the eeprom and move to the center
+  EEPROM.put(0, totalSteps);
+
+  digitalWrite(dirPin, LOW);
+
+  for (int i = 0; i < (totalSteps / 2); i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(600);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(600);
+  }
+
+  delay(1000);
+}
+
+void calibrate() { // With the known total steps, move to bottom edge first and move to the center
+  while (digitalRead(switch2Pin) == HIGH) {
+    digitalWrite(dirPin, HIGH);
+
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(1500);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(1500);
+  }
+
+  digitalWrite(dirPin, LOW);
+
+  for (int i = 0; i < (totalSteps / 2); i++) {
+    digitalWrite(stepPin, HIGH);
+    delayMicroseconds(600);
+    digitalWrite(stepPin, LOW);
+    delayMicroseconds(600);
+  }
+
+  delay(1000);
 }
 
 void getPotValues() {
@@ -106,15 +184,11 @@ void getPotValues() {
 
   float potFrequencyValue = analogRead(potFrequencyPin);
   float maxFrequency = 20.0 / amplitude;
-  float frequency = (float)potFrequencyValue / 1023 * (20.0 / amplitude);
+  frequency = (float)potFrequencyValue / 1023 * (20.0 / amplitude);
   frequency = round(frequency / 0.02) * 0.02;
 
   int potWaveformValue = analogRead(potWaveformPin);
   selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
-
-  amplitude = 50;
-  frequency = 0.1;
-  selectedWaveform = 3;
 }
 
 float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
@@ -150,14 +224,8 @@ void moveToPosition(float position, float currentPosition) {
   bool isTurningClockwise = nextPosition > currentPosition;
   digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
 
-  Serial.print("Steps to move: ");
-  Serial.print(stepsToMove);
-
   // Determine the step delay
-  int stepDelay = max(150, round(interval * 1000 / (2 * abs(stepsToMove))));
-
-  Serial.print("   Step delay: ");
-  Serial.println(stepDelay);
+  int stepDelay = max(300, round(interval * 1000 / (2 * abs(stepsToMove))));
 
   // Move only if steps are needed
   if (stepsToMove != 0) {
@@ -171,4 +239,21 @@ void moveToPosition(float position, float currentPosition) {
 
   // Update the current position
   previousPosition = nextPosition;
+}
+
+void writeToLCD(int amplitude, float frequency, int selectedWaveform) {
+  String waveforms[4] = {"Sin", "Tri", "Sqr", "Saw"};
+
+  lcd.setCursor(0, 0);
+  lcd.print("Amp");
+  lcd.setCursor(6, 0);
+  lcd.print("Freq");
+  lcd.setCursor(13, 0);
+  lcd.print("W.F");
+  lcd.setCursor(0, 1);
+  lcd.print(amplitude);
+  lcd.setCursor(6, 1);
+  lcd.print(frequency);
+  lcd.setCursor(13, 1);
+  lcd.print(waveforms[selectedWaveform]);
 }
