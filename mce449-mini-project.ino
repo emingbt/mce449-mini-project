@@ -147,14 +147,10 @@ void moveToPosition(float position, float currentPosition) {
   bool isTurningClockwise = nextPosition > currentPosition;
   digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
 
-  Serial.print("Steps to move: ");
-  Serial.print(stepsToMove);
 
   // Determine the step delay
-  int stepDelay = max(200, round(interval * 1000 / (2 * abs(stepsToMove))));
+  int stepDelay = max(300, round(interval * 1000 / (2 * abs(stepsToMove))));
 
-  Serial.print("   Step delay: ");
-  Serial.println(stepDelay);
 
   // Move only if steps are needed
   if (stepsToMove != 0) {
