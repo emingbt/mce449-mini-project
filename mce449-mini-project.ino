@@ -26,6 +26,8 @@ const int calibrateButtonPin = 6;
 // Time and motion variables
 unsigned long previousTime = 0;  // Previous time (ms)
 unsigned long interval = 100;    // Interval between steps (ms)
+unsigned long previousLcdTime = 0;  // Previous time (ms)
+unsigned long lcdInterval = 1000;    // Interval between steps (ms)
 
 // Function parameters
 float amplitude = 50;      // Maximum amplitude (mm)
@@ -58,11 +60,12 @@ void setup() {
 
   pinMode(calibrateButtonPin, INPUT_PULLUP);
 
+  // Start serial connection
   Serial.begin(9600);
 
+  // Initialize LCD
   lcd.init();
   lcd.backlight();
-
   writeToLCD(amplitude, frequency, selectedWaveform);
 
   // Set MS1, MS2, MS3 pins
@@ -70,6 +73,7 @@ void setup() {
   digitalWrite(ms2Pin, LOW);
   digitalWrite(ms3Pin, LOW);
 
+  // Read the total steps from EEPROM and calibrate the system according to it
   EEPROM.get(0, totalSteps);
 
   if (totalSteps <= 0) {
@@ -87,6 +91,12 @@ void loop() {
     Serial.println("Button Pressed");
     calibrate();
     time = 0;
+  }
+
+  // Time control for LCD
+  if (currentTime - previousLcdTime >= lcdInterval) {
+    previousLcdTime = currentTime;  // Update the LCD timer
+    writeToLCD(amplitude, frequency, selectedWaveform);  // Update the LCD
   }
 
   // Time control for motion
@@ -179,7 +189,6 @@ void getPotValues() {
 
   int potWaveformValue = analogRead(potWaveformPin);
   selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
-
 }
 
 float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
@@ -215,10 +224,8 @@ void moveToPosition(float position, float currentPosition) {
   bool isTurningClockwise = nextPosition > currentPosition;
   digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
 
-
   // Determine the step delay
   int stepDelay = max(300, round(interval * 1000 / (2 * abs(stepsToMove))));
-
 
   // Move only if steps are needed
   if (stepsToMove != 0) {
