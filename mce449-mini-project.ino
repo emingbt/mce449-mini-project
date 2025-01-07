@@ -106,15 +106,12 @@ void getPotValues() {
 
   float potFrequencyValue = analogRead(potFrequencyPin);
   float maxFrequency = 20.0 / amplitude;
-  float frequency = (float)potFrequencyValue / 1023 * (20.0 / amplitude);
+  frequency = (float)potFrequencyValue / 1023 * (20.0 / amplitude);
   frequency = round(frequency / 0.02) * 0.02;
 
   int potWaveformValue = analogRead(potWaveformPin);
   selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
 
-  amplitude = 50;
-  frequency = 0.1;
-  selectedWaveform = 3;
 }
 
 float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
