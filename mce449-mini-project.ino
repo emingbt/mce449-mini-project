@@ -1,3 +1,5 @@
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
 // Stepper motor pins
 const int stepPin = 2;
 const int dirPin = 3;
@@ -32,6 +34,7 @@ float time = 0;
 
 float previousPosition = 0;
 
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 void setup() {
   // Set pins as outputs
   pinMode(stepPin, OUTPUT);
@@ -45,6 +48,10 @@ void setup() {
   pinMode(potAmplitudePin, INPUT);
   pinMode(potWaveformPin, INPUT);
 
+  lcd.init();
+  lcd.backlight();
+
+  writeToLCD(amplitude, frequency, selectedWaveform);
   // Set MS1, MS2, MS3 pins
   digitalWrite(ms1Pin, HIGH);
   digitalWrite(ms2Pin, LOW);
@@ -164,4 +171,21 @@ void moveToPosition(float position, float currentPosition) {
 
   // Update the current position
   previousPosition = nextPosition;
+}
+
+void writeToLCD(int amplitude, float frequency, int selectedWaveform) {
+  String waveforms[4] = {"Sin", "Tri", "Sqr", "Saw"};
+
+  lcd.setCursor(0, 0);
+  lcd.print("Amp");
+  lcd.setCursor(6, 0);
+  lcd.print("Freq");
+  lcd.setCursor(13, 0);
+  lcd.print("W.F");
+  lcd.setCursor(0, 1);
+  lcd.print(amplitude);
+  lcd.setCursor(6, 1);
+  lcd.print(frequency);
+  lcd.setCursor(13, 1);
+  lcd.print(waveforms[selectedWaveform]);
 }
