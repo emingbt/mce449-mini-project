@@ -11,8 +11,8 @@ const int ms3Pin = 8;
 const int switchPin = 4;
 
 // Potantiometer pins
-const int potFrequencyPin = A0;
-const int potAmplitudePin = A1;
+const int potAmplitudePin = A0;
+const int potFrequencyPin = A1;
 const int potWaveformPin = A2;
 
 // Button Pins
