@@ -21,6 +21,7 @@ const int potWaveformPin = A2;
 // Button Pins
 const int calibrateButtonPin = 6;
 const int resetButtonPin = 7;
+const int startStopButtonPin = 8;
 
 // Time and motion variables
 unsigned long previousTime = 0;     // Previous time (ms)
@@ -118,7 +119,7 @@ void loop() {
   }
 
   // Time control for motion
-  if (currentTime - previousTime >= interval) {
+  if (currentTime - previousTime >= interval && digitalRead(startStopButtonPin) == LOW) {
     previousTime = currentTime;  // Update the time
 
     getPotValues();
