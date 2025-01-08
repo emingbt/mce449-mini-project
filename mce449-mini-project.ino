@@ -20,6 +20,7 @@ const int potWaveformPin = A2;
 
 // Button Pins
 const int calibrateButtonPin = 6;
+const int resetButtonPin = 7;
 
 // Time and motion variables
 unsigned long previousTime = 0;     // Previous time (ms)
@@ -84,6 +85,30 @@ void loop() {
   if (digitalRead(calibrateButtonPin) == LOW) {
     calibrate();
     time = 0;
+  }
+
+  // Reset the position if the reset button is pressed
+  if (digitalRead(resetButtonPin) == LOW) {
+    float mmPerStep = 0.04;
+    int stepsToMove = round(previousPosition / mmPerStep);
+
+    // Determine the direction
+    bool isTurningClockwise = previousPosition > 0;
+    digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
+
+    // Move to center
+    if (stepsToMove != 0) {
+      for (int i = 0; i < abs(stepsToMove); i++) {
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(500);
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(500);
+      }
+    }
+
+    previousPosition = 0;
+    time = 0;
+    delay(500);
   }
 
   // Time control for LCD
