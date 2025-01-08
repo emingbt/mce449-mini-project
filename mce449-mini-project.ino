@@ -8,8 +8,6 @@ const int dirPin = 3;
 
 // Microstepping mode pins
 const int ms1Pin = 10;
-const int ms2Pin = 9;
-const int ms3Pin = 8;
 
 // End switch pin
 const int switch1Pin = 4;
@@ -47,8 +45,6 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(ms1Pin, OUTPUT);
-  pinMode(ms2Pin, OUTPUT);
-  pinMode(ms3Pin, OUTPUT);
 
   // Set pins as inputs
   pinMode(potFrequencyPin, INPUT);
@@ -68,10 +64,8 @@ void setup() {
   lcd.backlight();
   writeToLCD(amplitude, frequency, selectedWaveform);
 
-  // Set MS1, MS2, MS3 pins
+  // Set MS1 pin
   digitalWrite(ms1Pin, HIGH);
-  digitalWrite(ms2Pin, LOW);
-  digitalWrite(ms3Pin, LOW);
 
   // Read the total steps from EEPROM and calibrate the system according to it
   EEPROM.get(0, totalSteps);
@@ -88,7 +82,6 @@ void loop() {
 
   // Calibrate the system, if the calibrate button is pressed
   if (digitalRead(calibrateButtonPin) == LOW) {
-    Serial.println("Button Pressed");
     calibrate();
     time = 0;
   }
