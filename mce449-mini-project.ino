@@ -8,8 +8,6 @@ const int dirPin = 3;
 
 // Microstepping mode pins
 const int ms1Pin = 10;
-const int ms2Pin = 9;
-const int ms3Pin = 8;
 
 // End switch pin
 const int switch1Pin = 4;
@@ -22,12 +20,14 @@ const int potWaveformPin = A2;
 
 // Button Pins
 const int calibrateButtonPin = 6;
+const int resetButtonPin = 7;
+const int startStopButtonPin = 8;
 
 // Time and motion variables
-unsigned long previousTime = 0;  // Previous time (ms)
-unsigned long interval = 100;    // Interval between steps (ms)
+unsigned long previousTime = 0;     // Previous time (ms)
+unsigned long interval = 100;       // Interval between steps (ms)
 unsigned long previousLcdTime = 0;  // Previous time (ms)
-unsigned long lcdInterval = 1000;    // Interval between steps (ms)
+unsigned long lcdInterval = 1000;   // Interval between steps (ms)
 
 // Function parameters
 float amplitude = 50;      // Maximum amplitude (mm)
@@ -47,8 +47,6 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(ms1Pin, OUTPUT);
-  pinMode(ms2Pin, OUTPUT);
-  pinMode(ms3Pin, OUTPUT);
 
   // Set pins as inputs
   pinMode(potFrequencyPin, INPUT);
@@ -68,10 +66,8 @@ void setup() {
   lcd.backlight();
   writeToLCD(amplitude, frequency, selectedWaveform);
 
-  // Set MS1, MS2, MS3 pins
+  // Set MS1 pin
   digitalWrite(ms1Pin, HIGH);
-  digitalWrite(ms2Pin, LOW);
-  digitalWrite(ms3Pin, LOW);
 
   // Read the total steps from EEPROM and calibrate the system according to it
   EEPROM.get(0, totalSteps);
@@ -88,19 +84,42 @@ void loop() {
 
   // Calibrate the system, if the calibrate button is pressed
   if (digitalRead(calibrateButtonPin) == LOW) {
-    Serial.println("Button Pressed");
     calibrate();
     time = 0;
   }
 
+  // Reset the position if the reset button is pressed
+  if (digitalRead(resetButtonPin) == LOW) {
+    float mmPerStep = 0.04;
+    int stepsToMove = round(previousPosition / mmPerStep);
+
+    // Determine the direction
+    bool isTurningClockwise = previousPosition > 0;
+    digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
+
+    // Move to center
+    if (stepsToMove != 0) {
+      for (int i = 0; i < abs(stepsToMove); i++) {
+        digitalWrite(stepPin, HIGH);
+        delayMicroseconds(500);
+        digitalWrite(stepPin, LOW);
+        delayMicroseconds(500);
+      }
+    }
+
+    previousPosition = 0;
+    time = 0;
+    delay(500);
+  }
+
   // Time control for LCD
   if (currentTime - previousLcdTime >= lcdInterval) {
-    previousLcdTime = currentTime;  // Update the LCD timer
+    previousLcdTime = currentTime;                       // Update the LCD timer
     writeToLCD(amplitude, frequency, selectedWaveform);  // Update the LCD
   }
 
   // Time control for motion
-  if (currentTime - previousTime >= interval) {
+  if (currentTime - previousTime >= interval && digitalRead(startStopButtonPin) == LOW) {
     previousTime = currentTime;  // Update the time
 
     getPotValues();
@@ -156,7 +175,7 @@ void initialCalibrate() {
   delay(1000);
 }
 
-void calibrate() { // With the known total steps, move to bottom edge first and move to the center
+void calibrate() {  // With the known total steps, move to bottom edge first and move to the center
   while (digitalRead(switch2Pin) == HIGH) {
     digitalWrite(dirPin, HIGH);
 
@@ -242,7 +261,7 @@ void moveToPosition(float position, float currentPosition) {
 }
 
 void writeToLCD(int amplitude, float frequency, int selectedWaveform) {
-  String waveforms[4] = {"Sin", "Tri", "Sqr", "Saw"};
+  String waveforms[4] = { "Sin", "Tri", "Sqr", "Saw" };
 
   lcd.setCursor(0, 0);
   lcd.print("Amp");
