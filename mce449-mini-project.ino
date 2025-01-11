@@ -30,7 +30,7 @@ unsigned long previousTime = 0;     // Previous time (ms)
 unsigned long interval = 100;       // Interval between steps (ms)
 
 // Function parameters
-float amplitude = 50;      // Maximum amplitude (mm)
+int amplitude = 50;        // Maximum amplitude (mm)
 float frequency = 0.1;     // Frequency (Hz)
 int selectedWaveform = 0;  // Waveform 0:Sine, 1:Triangle, 2:Square, 3:Sawtooth
 
