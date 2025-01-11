@@ -275,8 +275,7 @@ void moveToPosition(float position, float currentPosition) {
   bool isTurningClockwise = nextPosition > currentPosition;
   digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
 
-  // Determine the step delay
-  int stepDelay = max(300, round(interval * 1000 / (2 * abs(stepsToMove))));
+  int stepDelay = max(250, round(interval * 1000 / (2 * abs(stepsToMove))));
 
   // Move only if steps are needed
   if (stepsToMove != 0) {
