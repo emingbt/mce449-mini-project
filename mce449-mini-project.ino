@@ -250,13 +250,13 @@ float getPosition(int amplitude, float frequency, int selectedWaveform, float ti
       position = sin(2 * PI * frequency * time);
       break;
     case 1:
-      position = 2 * abs(fmod(time * frequency, 1.0) * 2 - 1) - 1;
+      position = 2 * abs(fmod((time + 0.25) * frequency, 1.0) * 2 - 1) - 1;
       break;
     case 2:
       position = (sin(2 * PI * frequency * time) >= 0) ? 1.0 : -1.0;
       break;
     case 3:
-      position = 2 * fmod(time * frequency, 1.0) - 1;
+      position = 2 * fmod((time + 0.5) * frequency, 1.0) - 1;
       break;
     default:
       position = 0;
