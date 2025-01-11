@@ -173,25 +173,25 @@ void loop() {
 
 void initialCalibrate() {
   // Move to the upper edge until the needle activates the limit switch
-  while (digitalRead(switch1Pin) == HIGH) {
-    digitalWrite(dirPin, LOW);
+  digitalWrite(dirPin, LOW);
 
+  while (digitalRead(switch2Pin) == HIGH) {
     digitalWrite(stepPin, HIGH);
-    delayMicroseconds(1500);
+    delayMicroseconds(1000);
     digitalWrite(stepPin, LOW);
-    delayMicroseconds(1500);
+    delayMicroseconds(1000);
   }
 
   delay(500);
 
   // Move to the bottom edge and count the steps until the needle activates the limit switch
-  while (digitalRead(switch2Pin) == HIGH) {
-    digitalWrite(dirPin, HIGH);
+  digitalWrite(dirPin, HIGH);
 
+  while (digitalRead(switch1Pin) == HIGH) {
     digitalWrite(stepPin, HIGH);
-    delayMicroseconds(1500);
+    delayMicroseconds(1000);
     digitalWrite(stepPin, LOW);
-    delayMicroseconds(1500);
+    delayMicroseconds(1000);
 
     totalSteps++;
   }
@@ -214,9 +214,9 @@ void initialCalibrate() {
 }
 
 void calibrate() {  // With the known total steps, move to bottom edge first and move to the center
-  while (digitalRead(switch2Pin) == HIGH) {
-    digitalWrite(dirPin, HIGH);
+  digitalWrite(dirPin, HIGH);
 
+  while (digitalRead(switch1Pin) == HIGH) {
     digitalWrite(stepPin, HIGH);
     delayMicroseconds(1500);
     digitalWrite(stepPin, LOW);
@@ -231,6 +231,9 @@ void calibrate() {  // With the known total steps, move to bottom edge first and
     digitalWrite(stepPin, LOW);
     delayMicroseconds(600);
   }
+
+  time = 0;
+  previousPosition = 0;
 
   delay(1000);
 }
