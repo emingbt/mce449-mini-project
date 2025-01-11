@@ -28,8 +28,6 @@ const int switch2Pin = 9;
 // Time and motion variables
 unsigned long previousTime = 0;     // Previous time (ms)
 unsigned long interval = 100;       // Interval between steps (ms)
-unsigned long previousLcdTime = 0;  // Previous time (ms)
-unsigned long lcdInterval = 1000;   // Interval between steps (ms)
 
 // Function parameters
 float amplitude = 50;      // Maximum amplitude (mm)
@@ -61,7 +59,7 @@ void setup() {
   // Initialize LCD
   lcd.init();
   lcd.backlight();
-  writeToLCD(amplitude, frequency, selectedWaveform);
+  initializeLCD(amplitude, frequency, selectedWaveform);
 
   // Set MS1 pin
   digitalWrite(ms1Pin, HIGH);
@@ -257,7 +255,7 @@ void moveToPosition(float position, float currentPosition) {
   previousPosition = nextPosition;
 }
 
-void writeToLCD(int amplitude, float frequency, int selectedWaveform) {
+void initializeLCD(int amplitude, float frequency, int selectedWaveform) {
   String waveforms[4] = { "Sin", "Tri", "Sqr", "Saw" };
 
   lcd.setCursor(0, 0);
