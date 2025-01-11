@@ -26,8 +26,10 @@ const int switch1Pin = 8;
 const int switch2Pin = 9;
 
 // Time and motion variables
-unsigned long previousTime = 0;     // Previous time (ms)
-unsigned long interval = 100;       // Interval between steps (ms)
+unsigned long previousTime = 0;          // Previous time (ms)
+unsigned long interval = 100;            // Interval between steps (ms)
+unsigned long pressStartTime = 0;        // Previous time (ms)
+unsigned long calibrateInterval = 3000;  // Calibrate button interval (ms)
 
 // Function parameters
 int amplitude = 50;        // Maximum amplitude (mm)
