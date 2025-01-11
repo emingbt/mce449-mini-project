@@ -40,8 +40,10 @@ float time = 0;
 
 float previousPosition = 0;
 
-int totalSteps = 0;
+int totalSteps = 0;     // Total moveable length
+bool isRunning = true;  // Start stop button state
 
+// Create an LCD class
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() {
