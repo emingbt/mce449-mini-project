@@ -51,7 +51,14 @@ void setup() {
   pinMode(switch1Pin, INPUT_PULLUP);
   pinMode(switch2Pin, INPUT_PULLUP);
 
-  pinMode(calibrateButtonPin, INPUT_PULLUP);
+  pinMode(resetCalibrateButtonPin, INPUT_PULLUP);
+  pinMode(startStopButtonPin, INPUT_PULLUP);
+  pinMode(waveformButtonPin, INPUT_PULLUP);
+
+  pinMode(amplitudeIncreaseButtonPin, INPUT_PULLUP);
+  pinMode(amplitudeDecreaseButtonPin, INPUT_PULLUP);
+  pinMode(frequencyIncreaseButtonPin, INPUT_PULLUP);
+  pinMode(frequencyDecreaseButtonPin, INPUT_PULLUP);
 
   // Start serial connection
   Serial.begin(9600);
@@ -77,50 +84,86 @@ void setup() {
 void loop() {
   unsigned long currentTime = millis();  // Get the current time
 
-  // Calibrate the system, if the calibrate button is pressed
-  if (digitalRead(calibrateButtonPin) == LOW) {
-    calibrate();
-    time = 0;
-  }
+  // Reset/Calibrate the system
+  if (digitalRead(resetCalibrateButtonPin) == LOW) {
+    pressStartTime = millis();  // Use millis() to get the current time
 
-  // Reset the position if the reset button is pressed
-  if (digitalRead(resetButtonPin) == LOW) {
-    float mmPerStep = 0.04;
-    int stepsToMove = round(previousPosition / mmPerStep);
+    while (digitalRead(resetCalibrateButtonPin) == LOW) {
+      currentTime = millis();  // Update currentTime inside the loop
 
-    // Determine the direction
-    bool isTurningClockwise = previousPosition > 0;
-    digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
-
-    // Move to center
-    if (stepsToMove != 0) {
-      for (int i = 0; i < abs(stepsToMove); i++) {
-        digitalWrite(stepPin, HIGH);
-        delayMicroseconds(500);
-        digitalWrite(stepPin, LOW);
-        delayMicroseconds(500);
+      if (currentTime - pressStartTime > calibrateInterval) {
+        calibrate();
+        pressStartTime = currentTime;  // Reset pressStartTime if needed
       }
     }
 
-    previousPosition = 0;
-    time = 0;
-    delay(500);
+    if (previousPosition != 0) {
+      reset(currentTime);
+    }
   }
 
-  // Time control for LCD
-  if (currentTime - previousLcdTime >= lcdInterval) {
-    previousLcdTime = currentTime;                       // Update the LCD timer
-    writeToLCD(amplitude, frequency, selectedWaveform);  // Update the LCD
+  // Start/Stop the system
+  if (digitalRead(startStopButtonPin) == LOW) {
+    isRunning = !isRunning;
+    delay(300);
+  }
+
+  // Change the waveform
+  if (digitalRead(waveformButtonPin) == LOW) {
+    Serial.println("Waveform");
+    selectedWaveform = (selectedWaveform != 3) ? (selectedWaveform + 1) : 0;
+    String waveforms[4] = { "Sin", "Tri", "Sqr", "Saw" };
+
+    lcd.setCursor(13, 1);
+    lcd.print(waveforms[selectedWaveform]);
+
+    reset(currentTime);
+  }
+
+  if (digitalRead(amplitudeIncreaseButtonPin) == LOW && amplitude < 70) {
+    amplitude++;
+
+    lcd.setCursor(0, 1);
+    lcd.print(amplitude);
+
+    delay(5);
+  }
+
+  if (digitalRead(amplitudeDecreaseButtonPin) == LOW && amplitude > 20) {
+    amplitude--;
+
+    lcd.setCursor(0, 1);
+    lcd.print(amplitude);
+
+    delay(5);
+  }
+
+  if (digitalRead(frequencyIncreaseButtonPin) == LOW && frequency < 1) {
+    reset(currentTime);
+    frequency += 0.01;
+
+    lcd.setCursor(6, 1);
+    lcd.print(frequency);
+
+    delay(5);
+  }
+
+  if (digitalRead(frequencyDecreaseButtonPin) == LOW && frequency > 0.01) {
+    reset(currentTime);
+    frequency -= 0.01;
+
+    lcd.setCursor(6, 1);
+    lcd.print(frequency);
+
+    delay(5);
   }
 
   // Time control for motion
-  if (currentTime - previousTime >= interval && digitalRead(startStopButtonPin) == LOW) {
+  if (currentTime - previousTime >= interval && isRunning) {
     previousTime = currentTime;  // Update the time
 
-    getPotValues();
-
+    // Get position and move the motor
     float position = getPosition(amplitude, frequency, selectedWaveform, time);
-
     moveToPosition(position, previousPosition);
 
     // Advance time
@@ -192,17 +235,8 @@ void calibrate() {  // With the known total steps, move to bottom edge first and
   delay(1000);
 }
 
-void getPotValues() {
-  int potAmplitudeValue = analogRead(potAmplitudePin);
-  amplitude = map(potAmplitudeValue, 0, 1023, 20, 100);
 
-  float potFrequencyValue = analogRead(potFrequencyPin);
-  float maxFrequency = 20.0 / amplitude;
-  frequency = (float)potFrequencyValue / 1023 * (20.0 / amplitude);
-  frequency = round(frequency / 0.02) * 0.02;
 
-  int potWaveformValue = analogRead(potWaveformPin);
-  selectedWaveform = map(potWaveformValue, 0, 1023, 0, 3);
 }
 
 float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
