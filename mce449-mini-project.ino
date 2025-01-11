@@ -7,17 +7,23 @@ const int stepPin = 2;
 const int dirPin = 3;
 
 // Microstepping mode pins
-const int ms1Pin = 10;
-
-// End switch pin
-const int switch1Pin = 4;
-const int switch2Pin = 5;
-
+const int ms1Pin = 4;
 
 // Button Pins
-const int calibrateButtonPin = 6;
-const int resetButtonPin = 7;
-const int startStopButtonPin = 8;
+const int resetCalibrateButtonPin = 6;
+const int startStopButtonPin = 0;
+const int waveformButtonPin = 5;
+const int suprizeButtonPin = 1;
+
+// Wave button pins
+const int amplitudeIncreaseButtonPin = 10;
+const int amplitudeDecreaseButtonPin = 11;
+const int frequencyIncreaseButtonPin = 12;
+const int frequencyDecreaseButtonPin = 13;
+
+// End switch pin
+const int switch1Pin = 8;
+const int switch2Pin = 9;
 
 // Time and motion variables
 unsigned long previousTime = 0;     // Previous time (ms)
