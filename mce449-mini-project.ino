@@ -13,10 +13,6 @@ const int ms1Pin = 10;
 const int switch1Pin = 4;
 const int switch2Pin = 5;
 
-// Potantiometer pins
-const int potAmplitudePin = A0;
-const int potFrequencyPin = A1;
-const int potWaveformPin = A2;
 
 // Button Pins
 const int calibrateButtonPin = 6;
@@ -47,11 +43,6 @@ void setup() {
   pinMode(stepPin, OUTPUT);
   pinMode(dirPin, OUTPUT);
   pinMode(ms1Pin, OUTPUT);
-
-  // Set pins as inputs
-  pinMode(potFrequencyPin, INPUT);
-  pinMode(potAmplitudePin, INPUT);
-  pinMode(potWaveformPin, INPUT);
 
   pinMode(switch1Pin, INPUT_PULLUP);
   pinMode(switch2Pin, INPUT_PULLUP);
