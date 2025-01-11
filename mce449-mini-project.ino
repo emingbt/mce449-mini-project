@@ -238,8 +238,29 @@ void calibrate() {  // With the known total steps, move to bottom edge first and
   delay(1000);
 }
 
+void reset(float currentTime) {
+  float mmPerStep = 0.04;
+  int stepsToMove = round(previousPosition / mmPerStep);
 
+  // Determine the direction
+  bool isTurningClockwise = previousPosition < 0;
+  digitalWrite(dirPin, isTurningClockwise ? HIGH : LOW);
 
+  // Move to center
+  if (stepsToMove != 0) {
+    for (int i = 0; i < abs(stepsToMove); i++) {
+      digitalWrite(stepPin, HIGH);
+      delayMicroseconds(1000);
+      digitalWrite(stepPin, LOW);
+      delayMicroseconds(1000);
+    }
+  }
+
+  previousPosition = 0;
+  time = 0;
+  pressStartTime = currentTime;
+
+  delay(500);
 }
 
 float getPosition(int amplitude, float frequency, int selectedWaveform, float time) {
